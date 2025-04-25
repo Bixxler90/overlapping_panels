@@ -147,7 +147,50 @@ class OverlappingPanelsState extends State<OverlappingPanels>
       }
     });
   }
+void revealToSide(RevealSide direction, {bool force = false}) {
+  final mediaWidth = MediaQuery.of(context).size.width;
+  double goal = 0;
 
+  switch (direction) {
+    case RevealSide.left:
+      goal = _calculateGoal(mediaWidth, 1);
+      break;
+    case RevealSide.right:
+      goal = _calculateGoal(mediaWidth, -1);
+      break;
+    case RevealSide.main:
+      goal = 0;
+      break;
+  }
+
+  if (!force && translate == goal) {
+    // Keine Bewegung nötig
+    return;
+  }
+
+  final animationController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+
+  animationController.addStatusListener((status) {
+    if (status == AnimationStatus.completed) {
+      if (widget.onSideChange != null) {
+        widget.onSideChange!(direction);
+      }
+      animationController.dispose();
+    }
+  });
+
+  final animation = Tween<double>(begin: translate, end: goal).animate(animationController);
+  animation.addListener(() {
+    setState(() {
+      translate = animation.value;
+    });
+  });
+
+  animationController.forward();
+}
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
